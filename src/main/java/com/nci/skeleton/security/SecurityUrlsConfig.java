@@ -31,7 +31,8 @@ public class SecurityUrlsConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     var corsConfiguration = new CorsConfiguration();
                     corsConfiguration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000",
-                            "http://localhost:8080", "http://127.0.0.1:8080","http://23319330-book-doctor-lb-1389235972.eu-central-1.elb.amazonaws.com"));
+                            "http://localhost:8080", "http://127.0.0.1:8080",
+                            "http://23192887-fastex-lb-1071814856.eu-central-1.elb.amazonaws.com"));
                     corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     corsConfiguration.setAllowedHeaders(List.of("*"));
                     corsConfiguration.setAllowCredentials(true);
