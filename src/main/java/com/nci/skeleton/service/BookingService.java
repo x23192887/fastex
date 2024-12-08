@@ -7,9 +7,11 @@ import com.nci.skeleton.repository.BookingRepository;
 import com.nci.skeleton.repository.UserRepository;
 import com.nci.skeleton.security.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -28,8 +30,8 @@ public class BookingService {
     @Autowired
     UserRepository userRepository;
 
-    @Autowired
-    SQSService sqsService;
+    @Value("${s3ImageUrl}")
+    private String s3ImageUrl;
 
     @Autowired
     private JavaMailSender emailSender;
@@ -121,7 +123,7 @@ public class BookingService {
         return response;
     }
 
-    public void sendEmail(User productUser, Booking booking) {
+    public String sendEmail(User productUser, Booking booking) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("dhanushasiva218@gmail.com");
         message.setTo(productUser.getEmail());
@@ -131,20 +133,34 @@ public class BookingService {
                 "Here are the details of your booking:\n" +
                 "\n" +
                 "Booking ID: "+booking.getId()+"\n" +
-                "Pickup Address: "+booking.getId()+"\n" +
-                "Delivery Address: "+booking.getId()+"\n" +
-                "Package Details: "+booking.getId()+"\n" +
+                "Pickup Address: "+booking.getPickupAddress()+"\n" +
+                "Delivery Address: "+booking.getDeliveryAddress()+"\n" +
+                "Receiver Details: "+booking.getReceiverName()+"\n" +
                 "Estimated Delivery Time: "+booking.getEstimatedDeliveryDate()+"\n" +
                 "Delivery Charges: "+booking.getPrice()+"\n" +
                 "Our team is committed to ensuring your package reaches its destination on time. You can track your delivery status in real-time using the Fastex app or by visiting our website at [tracking link].\n" +
                 "\n" +
-                "If you have any questions or need assistance, please don’t hesitate to contact our support team at [support email/phone number].\n" +
+                "If you have any questions or need assistance, please don’t hesitate to contact our support team at http://23192887-fastex-lb-1071814856.eu-central-1.elb.amazonaws.com/.\n" +
                 "\n" +
                 "Thank you for trusting Fastex. We look forward to serving you!\n" +
                 "\n" +
                 "Best regards,\n" +
                 "The Fastex Team");
         emailSender.send(message);
+        return "Successful";
     }
 
+    @Transactional
+    public void updateImageUrl(String propertyId, String fileKey) {
+        bookingRepository.findById(UUID.fromString(propertyId)).ifPresent(
+                product -> {
+                    if (nonNull(product.getImages())) {
+                        product.getImages().add(s3ImageUrl + fileKey);
+                    } else {
+                        product.setImages(List.of(s3ImageUrl + fileKey));
+                    }
+                    bookingRepository.save(product);
+                }
+        );
+    }
 }
