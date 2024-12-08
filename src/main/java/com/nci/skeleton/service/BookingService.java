@@ -7,6 +7,8 @@ import com.nci.skeleton.repository.BookingRepository;
 import com.nci.skeleton.repository.UserRepository;
 import com.nci.skeleton.security.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,6 +30,9 @@ public class BookingService {
 
     @Autowired
     SQSService sqsService;
+
+    @Autowired
+    private JavaMailSender emailSender;
 
     public List<Booking> fetchMyBookings(String userId) {
         return bookingRepository.findByStatusAndBookedBy(STATUS_ACTIVE, userId);
@@ -116,31 +121,30 @@ public class BookingService {
         return response;
     }
 
-    public String sendEmail(User productUser, Booking booking) {
-
-        String messageBody = new Gson().toJson(new HashMap<String, String>() {{
-            put("recipient", productUser.getEmail());
-            put("body", "Congratulations, " + productUser.getFirstname() + "! Great news! Your delivery has been booked successfully!\n" +
-                    "\n" +
-                    "We are pleased to confirm your Doctor reservation. Below are the details of your booking:\n" +
-                    "\n" +
-                    "- **Pick-up Location:** " + booking.getPickupAddress() + "\n" +
-                    "- **Receiver Name(s):** " + booking.getReceiverName()+ "\n" +
-                    "- **Booking Reference:** " + booking.getId() + "\n" +
-                    "\n" +
-                    "You will receive a confirmation email shortly with all the details regarding your delivery. Please check your inbox, and remember to check your spam or junk folder if you don't see the email.\n" +
-                    "\n" +
-                    "\n\n" +
-                    "\n" +
-                    "If you have any questions or need assistance, feel free to contact our customer support team at +353 899 999 999.\n" +
-                    "\n" +
-                    "Thank you for choosing Fastex! We look forward to delivering you.\n" +
-                    "\n" +
-                    "Best regards,  \n" +
-                    "- Team Fastex\n");
-            put("subject", "Congratulations "+productUser.getFirstname()+"! Your Shipment Has Been Booked...");
-        }});
-
-        return sqsService.sendSqsMessage(messageBody);
+    public void sendEmail(User productUser, Booking booking) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("dhanushasiva218@gmail.com");
+        message.setTo(productUser.getEmail());
+        message.setSubject("Congratulations! "+productUser.getFirstname()+", Your Delivery Has Been Booked...");
+        message.setText("Thank you for choosing Fastex for your courier needs! We are excited to assist you in delivering your package swiftly and securely.\n" +
+                "\n" +
+                "Here are the details of your booking:\n" +
+                "\n" +
+                "Booking ID: "+booking.getId()+"\n" +
+                "Pickup Address: "+booking.getId()+"\n" +
+                "Delivery Address: "+booking.getId()+"\n" +
+                "Package Details: "+booking.getId()+"\n" +
+                "Estimated Delivery Time: "+booking.getEstimatedDeliveryDate()+"\n" +
+                "Delivery Charges: "+booking.getPrice()+"\n" +
+                "Our team is committed to ensuring your package reaches its destination on time. You can track your delivery status in real-time using the Fastex app or by visiting our website at [tracking link].\n" +
+                "\n" +
+                "If you have any questions or need assistance, please don’t hesitate to contact our support team at [support email/phone number].\n" +
+                "\n" +
+                "Thank you for trusting Fastex. We look forward to serving you!\n" +
+                "\n" +
+                "Best regards,\n" +
+                "The Fastex Team");
+        emailSender.send(message);
     }
+
 }
